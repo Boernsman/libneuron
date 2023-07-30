@@ -1,2 +1,5 @@
 # libneuron
-Qt libray to access the UniPi Neuron SPI interface
+Qt library to access the UniPi Neuron SPI interface.
+
+## Install
+

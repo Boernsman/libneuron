@@ -43,8 +43,8 @@ public:
 
     bool init();
 
-    SpiMessage *writeBit(quint16 reg, quint8 value);
-    SpiMessage *readRegisters(uint16_t reg, uint8_t cnt);
+    SpiReply *writeBit(quint16 reg, quint8 value);
+    SpiReply *readRegisters(uint16_t reg, uint8_t cnt);
     //bool readRegisters(uint16_t reg, uint8_t cnt, uint16_t* result);
     bool writeRegister(uint16_t reg, uint16_t value);
     bool writeRegisters(uint16_t reg, uint8_t cnt, uint16_t* values);

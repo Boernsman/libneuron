@@ -25,6 +25,9 @@ SOURCES += \
 target.path = $$[QT_INSTALL_LIBS]
 INSTALLS += target
 
+DTS_INSTALL.extra = ./spi_overlay/install.sh
+INSTALLS += DTS_INSTALL
+
 for(header, HEADERS) {
     path = $$[QT_INSTALL_PREFIX]/include/libneuron/$${dirname(header)}
     eval(headers_$${path}.files += $${header})

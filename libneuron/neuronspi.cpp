@@ -58,9 +58,11 @@ bool NeuronSpi::init()
     m_spi->start();
 
     // Read firmware and hardware versions
-    SpiMessage * message = readRegisters(1000, 5);
-    connect(message, &SpiMessage::finished, this, [=] {
-        uint16_t *configRegisters = (uint16_t *)message->rxData();
+    auto reply = readRegisters(1000, 5);
+    connect(reply, &SpiReply::finished, this, [=] {
+        reply->deleteLater();
+
+        auto configRegisters = reply->result();
         auto boardVersion = NeuronUtil::parseVersion(configRegisters);
         int speed = NeuronUtil::getBoardSpeed(boardVersion);
         qCInfo(dcNeuronSpi()) << "Digital Inputs:" << boardVersion.DiCount;
@@ -86,7 +88,6 @@ bool NeuronSpi::init()
         m_spi->setSpiSpeed(m_defaultSpiSpeed);
         speed = m_defaultSpiSpeed;
         */
-        delete message;
      });
 
 
@@ -103,13 +104,13 @@ bool NeuronSpi::init()
     return true;
 }
 
-SpiMessage *NeuronSpi::readRegisters(uint16_t reg, uint8_t cnt)
+SpiReply *NeuronSpi::readRegisters(uint16_t reg, uint8_t cnt)
 {
     //uint16_t len2 = m_sizeOfCommunicationHeader + sizeof(uint16_t) * cnt;
     //if (!twoPhaseOperation(FunctionCode::ReadRegister, reg, len2))
     //    return false;
     SpiMessage *message = new SpiMessage(FunctionCode::ReadRegister, reg, cnt, this);
-    m_spi->sendMessage(message);
+    return m_spi->sendMessage(message);
     /*if ((((CommunicationHeader *)(m_rx2))->op != FunctionCode::ReadRegister) ||
             (((CommunicationHeader *)(m_rx2))->len > cnt) ||
             (((CommunicationHeader *)(m_rx2))->reg != reg)) {
@@ -119,7 +120,6 @@ SpiMessage *NeuronSpi::readRegisters(uint16_t reg, uint8_t cnt)
     cnt = ((CommunicationHeader *)(m_rx2))->len;
     memmove(result, m_rx2+m_sizeOfCommunicationHeader, cnt * sizeof(uint16_t));
     */
-    return message;
 }
 
 bool NeuronSpi::writeRegister(uint16_t reg, uint16_t value)
@@ -174,11 +174,10 @@ bool NeuronSpi::readBits(uint16_t reg, uint16_t cnt, uint8_t *result)
     return true;
 }
 
-SpiMessage* NeuronSpi::writeBit(quint16 reg, quint8 value)
+SpiReply* NeuronSpi::writeBit(quint16 reg, quint8 value)
 {
     SpiMessage *message = new SpiMessage(FunctionCode::WriteBit, reg, value, this);
-    m_spi->sendMessage(message);
-    return message;//onePhaseOperation(FunctionCode::WriteBit, reg, value);
+    return m_spi->sendMessage(message);
 }
 
 bool NeuronSpi::writeBits(uint16_t reg, uint16_t cnt, uint8_t *values)

@@ -1,4 +1,4 @@
-// MIT License
+// MIT Licen"e
 //
 // Copyright (c) 2023 Bernhard Trinnes
 //
@@ -24,6 +24,8 @@
 
 #include <QDebug>
 #include <QFile>
+#include <QDir>
+#include <QStandardPaths>
 
 ModbusMap::ModbusMap(const QString &neuronModel, QObject *parent)
     : QObject{parent},
@@ -59,10 +61,26 @@ bool ModbusMap::loadModbusMap()
         return false;
     }
 
-    for(int i = 1; i <= subUnits; i++) {
-        QString path = QString("./modbus_maps/Neuron_%1/Neuron_%1-Coils-group-%2.csv").arg(m_model).arg(i, 0, 10);
-        qDebug() << "Open CSV File:" << path;
+    QString mainDir;
+    {
+        const QString relativePath = "./modbus_maps/";
+        if (QDir(relativePath).exists()) {
+            mainDir = relativePath;
+        } else {
+            qDebug() << "Could not find modbus maps at relative path:" << mainDir;
+            const QString installationPath = "/usr/share/libneuron/maps/";
+            mainDir = installationPath;
+            if (!QFile(mainDir).exists()) {
+                qDebug() << "Could not find modbus maps at installation path:" << mainDir;
+                return false;
+            }
+        }
+    }
 
+    for(int i = 1; i <= subUnits; i++) {
+        const QString fileName = QString("Neuron_%1/Neuron_%1-Coils-group-%2.csv").arg(m_model).arg(i, 0, 10);
+        QString path = mainDir + fileName;
+        qDebug() << "Open CSV File:" << path;
         QFile *csvFile = new QFile(path);
         if (!csvFile->open(QIODevice::ReadOnly | QIODevice::Text)) {
             qWarning() << csvFile->errorString();
@@ -100,8 +118,8 @@ bool ModbusMap::loadModbusMap()
 
 
     for(int i = 1; i <= subUnits; i++) {
-        const QString path = QString("./modbus_maps/Neuron_%1/Neuron_%1-Registers-group-%2.csv").arg(m_model).arg(i, 0, 10);
-
+        const QString fileName = QString("Neuron_%1/Neuron_%1-Registers-group-%2.csv").arg(m_model).arg(i, 0, 10);
+        QString path = mainDir + fileName;
         qDebug() << "Open CSV File:" << path;
         QFile *csvFile = new QFile(path);
         if (!csvFile->open(QIODevice::ReadOnly | QIODevice::Text)) {

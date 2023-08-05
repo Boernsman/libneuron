@@ -54,7 +54,7 @@ public:
 
     explicit NeuronUtil(QObject *parent = nullptr);
 
-    static BoardVersion parseVersion(uint16_t *register1000);
+    static BoardVersion parseVersion(const QVector<quint16> &register1000);
     static QString firmwareName(int hw_version, int hw_base, const char* fwdir, const char* ext);
     static void printUpboards(int filter);
     static int upboardExists(int board);

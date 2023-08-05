@@ -55,46 +55,47 @@ void Spi::run()
 {
     qCInfo(dcSpi()) << "SPI loop started for" << m_spiDevice.fileName();
     spi_ioc_transfer spiTransfer[7];
-    int messageCount = 2;
 
     while (!isInterruptionRequested()) {
 
         if (!m_messageQueue.isEmpty()) {
-            SpiMessage * const message = m_messageQueue.dequeue();
-            message->startTimeoutTimer();
+            auto messageAndResponse = m_messageQueue.dequeue();
+            auto message = messageAndResponse.first;
+            auto reply = messageAndResponse.second;
+            reply->startTimeoutTimer();
 
             if (message->messageLength() < 6) {
                 qWarning(dcSpi()) << "Invalid SPI message, length must be min 6 bytes";
             } else if (message->messageLength() == 6) {
                 // One phase operation
-                messageCount = 2;
+                // Message count is fixed to 2
                 memset(spiTransfer, 0, sizeof(spiTransfer));
                 spiTransfer[0].delay_usecs = m_nssDefaultPause;
                 spiTransfer[1].delay_usecs = 0;
                 spiTransfer[1].tx_buf = (unsigned long) message->txData();
-                spiTransfer[1].rx_buf = (unsigned long) message->rxData();
+                spiTransfer[1].rx_buf = (unsigned long) reply->rxData();
                 spiTransfer[1].len = message->messageLength();
 
                 // Sending data on the SPI bus
                 if (ioctl(m_spiDevice.handle(), SPI_IOC_MESSAGE(2), &spiTransfer) < 1) {
                     qCWarning(dcSpi()) << "Can't send SPI message";
-                    emit message->errorOccurred(SpiMessage::Error::UnknownError);
+                    reply->setError(SpiError::UnknownError, "Unknown Error");
                 }
-                emit message->finished();
+                reply->setFinished(true);
             } else {
                 // Two phase operation
                 memset(spiTransfer, 0, sizeof(spiTransfer));
                 spiTransfer[0].delay_usecs = m_nssDefaultPause;    // starting pause between NSS and SCLK
                 spiTransfer[1].tx_buf = (unsigned long) message->txData();
-                spiTransfer[1].rx_buf = (unsigned long) message->rxData();
+                spiTransfer[1].rx_buf = (unsigned long) reply->rxData();
                 spiTransfer[1].len = 6;
 
                 int total = message->messageLength();
-                messageCount = 2;
+                int messageCount = 2;
                 // Splitting data up to fit into SPI messages
                 while (total > 0 && messageCount < 7) {
                     spiTransfer[messageCount].tx_buf = (unsigned long)message->txData()+6+(m_maxSpiRx*(messageCount-2));
-                    spiTransfer[messageCount].rx_buf = (unsigned long)message->rxData()+6+(m_maxSpiRx*(messageCount-2));
+                    spiTransfer[messageCount].rx_buf = (unsigned long)reply->rxData()+6+(m_maxSpiRx*(messageCount-2));
                     if ((total - m_maxSpiRx) > 0) {
                         spiTransfer[messageCount].len = m_maxSpiRx;
                         total -= m_maxSpiRx;
@@ -107,10 +108,9 @@ void Spi::run()
                 // Sending data on the SPI bus
                 if (ioctl(m_spiDevice.handle(), SPI_IOC_MESSAGE(messageCount), spiTransfer) < 1) {
                     qCWarning(dcSpi()) << "Can't send SPI message";
-                    emit messageSent(false, message);
-                } else {
-                    emit messageSent(true, message);
+                    reply->setError(SpiError::UnknownError, "Unknown Error");
                 }
+                reply->setFinished(true);
             }
             QThread::msleep(1);
         } else {
@@ -184,7 +184,9 @@ bool Spi::twoPhaseOperation(SpiMessage *message)
     return false;
 }
 */
-void Spi::sendMessage(SpiMessage * const message)
+SpiReply *Spi::sendMessage(const SpiMessage * const message)
 {
-    m_messageQueue.enqueue(message);
+    auto reply = new SpiReply(this);
+    m_messageQueue.enqueue(QPair<const SpiMessage *, SpiReply *>(message, reply));
+    return reply;
 }

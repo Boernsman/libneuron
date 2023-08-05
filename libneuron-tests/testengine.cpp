@@ -190,9 +190,9 @@ bool TestEngine::onReadAnalogInput(const QString &inputCircuit)
         return false;
     }
 
-    SpiMessage * message = m_spiList.at(reg.subNode()-1)->readRegisters(reg.address(), 2);
-    connect(message, &SpiMessage::finished, message, &SpiMessage::deleteLater);
-    connect(message, &SpiMessage::finished, this, [=] {
+    auto reply = m_spiList.at(reg.subNode()-1)->readRegisters(reg.address(), 2);
+    connect(reply, &SpiReply::finished, reply, &SpiReply::deleteLater);
+    connect(reply, &SpiReply::finished, this, [=] {
         //uint16_t regValue[2];
         //((regValue[1]<<16) & regValue[0]);
     });
@@ -210,9 +210,9 @@ bool TestEngine::onReadAnalogOutput(const QString &outputCircuit)
         qWarning() << "Subnote" << reg.subNode() << "does not exist";
         return false;
     }
-    SpiMessage * message = m_spiList.at(reg.subNode()-1)->readRegisters(reg.address(), 2);
-    connect(message, &SpiMessage::finished, message, &SpiMessage::deleteLater);
-    connect(message, &SpiMessage::finished, this, [=] {
+    auto reply = m_spiList.at(reg.subNode()-1)->readRegisters(reg.address(), 2);
+    connect(reply, &SpiReply::finished, reply, &SpiReply::deleteLater);
+    connect(reply, &SpiReply::finished, this, [=] {
         //uint16_t regValue[2];
         //((regValue[1]<<16) & regValue[0]);
     });

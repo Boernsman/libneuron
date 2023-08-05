@@ -28,16 +28,18 @@
 
 #include "neurondefines.h"
 
+enum SpiError {
+    NoError,
+    TimeoutError,
+    ProtocolError,
+    UnknownError
+};
+
 class SpiMessage : public QObject
 {
     Q_OBJECT
 public:
-    enum Error {
-        NoError,
-        TimeoutError,
-        ProtocolError,
-        UnknownError
-    };
+
     explicit SpiMessage(QObject *parent = nullptr);
     // Constructor for read messages
     SpiMessage(FunctionCode functionCode, int address, int length, QObject *parent = nullptr);
@@ -53,17 +55,13 @@ public:
     bool checkRxCrc();
 
     uint8_t * txData() const { return m_tx; }
-    uint8_t * rxData() { return m_rx; }
 
 private:
-    const int m_timeoutInterval = 100; // In milliseconds
-
     bool onePhaseOperation;
     FunctionCode m_functionCode = FunctionCode::Idle;
     uint16_t m_address = 0;
     uint8_t m_length = 0;
     QVector<quint16> m_data;
-
 
     typedef struct {
         uint8_t op;
@@ -76,14 +74,36 @@ private:
     void setTxMessage();
 
     uint8_t *m_tx;
+};
+
+class SpiReply: public QObject
+{
+    Q_OBJECT
+public:
+    SpiReply(QObject *parent = nullptr);
+    bool isFinished() const;
+    QVector<quint16> result() const;
+    QString errorString() const;
+    SpiError error() const;
+    void setResult(uint8_t result);
+    void setFinished(bool isFinished);
+    void setError(SpiError error, const QString &errorText);
+
+    void startTimeoutTimer();
+    uint8_t *rxData();
+private:
+    bool m_isFinished = false;
+    QString m_errorString = "No error";
+    SpiError m_error;
+
+    const int m_timeoutInterval = 100; // In milliseconds
     uint8_t *m_rx;
 
     void timerEvent(QTimerEvent *event) override;
 
 signals:
-    void errorOccurred(Error error);
+    void errorOccurred(SpiError error);
     void finished();
 };
-
 
 #endif // SPIMESSAGE_H

@@ -28,7 +28,7 @@ NeuronUtil::NeuronUtil(QObject *parent)
 
 }
 
-NeuronUtil::BoardVersion NeuronUtil::parseVersion(uint16_t *register1000)
+NeuronUtil::BoardVersion NeuronUtil::parseVersion(const QVector<quint16> &register1000)
 {
     BoardVersion boardVersion;
     boardVersion.SwVersion = register1000[0];

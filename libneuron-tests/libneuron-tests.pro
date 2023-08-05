@@ -26,5 +26,9 @@ HEADERS += \
 target.path = $$[QT_INSTALL_PREFIX]/bin
 INSTALLS += target
 
+MAP_FILES.files = modbus_maps/*
+MAP_FILES.path = /usr/share/libneuron/maps
+INSTALLS += MAP_FILES
+
 DISTFILES += \
     test.json

@@ -60,7 +60,6 @@ SpiMessage::SpiMessage(FunctionCode functionCode, int address, quint16 data, QOb
     m_data(data)
 {
     m_length = 1;
-    m_rx = new uint8_t[256+2+40];
 }
 
 SpiMessage::SpiMessage(FunctionCode functionCode, int address, const QVector<quint16> &data, QObject *parent) :
@@ -70,13 +69,8 @@ SpiMessage::SpiMessage(FunctionCode functionCode, int address, const QVector<qui
     m_data(data)
 {
     m_length = data.length();
-    m_rx = new uint8_t[256+2+40];
 }
 
-void SpiMessage::startTimeoutTimer()
-{
-    startTimer(m_timeoutInterval);
-}
 
 bool SpiMessage::checkRxCrc()
 {
@@ -106,9 +100,54 @@ void SpiMessage::setTxMessage()
     }
 }
 
-void SpiMessage::timerEvent(QTimerEvent *event)
+
+
+SpiReply::SpiReply(QObject *parent) : QObject{parent}
+{
+    m_rx = new uint8_t[256+2+40];
+}
+
+bool SpiReply::isFinished() const
+{
+    return m_isFinished;
+}
+
+QVector<quint16> SpiReply::result() const
+{
+    return QVector<quint16>();
+}
+
+void SpiReply::setFinished(bool isFinished)
+{
+    m_isFinished = isFinished;
+    if (isFinished) {
+        emit finished();
+    }
+}
+
+void SpiReply::setError(SpiError error, const QString &errorText)
+{
+    m_error = error;
+    m_errorString = errorText;
+
+    if (error != SpiError::NoError) {
+        emit errorOccurred(error);
+    }
+}
+
+void SpiReply::startTimeoutTimer()
+{
+    startTimer(m_timeoutInterval);
+}
+
+uint8_t *SpiReply::rxData()
+{
+    return m_rx;
+}
+
+void SpiReply::timerEvent(QTimerEvent *event)
 {
     Q_UNUSED(event);
-    emit errorOccurred(Error::TimeoutError);
+    emit errorOccurred(SpiError::TimeoutError);
     emit finished();
 }

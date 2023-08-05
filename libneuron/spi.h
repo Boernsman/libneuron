@@ -57,10 +57,10 @@ private:
     const int m_nssDefaultPause = 10;
     const uint32_t m_idlePattern = 0x0e5500fa;
 
-    QQueue<SpiMessage *> m_messageQueue;
+    QQueue<QPair<const SpiMessage *, SpiReply *>> m_messageQueue;
 
 public slots:
-    void sendMessage(SpiMessage * const message);
+    SpiReply *sendMessage(const SpiMessage * const message);
 
 signals:
     void messageSent(bool success, SpiMessage * const message);
